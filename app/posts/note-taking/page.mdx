@@ -1,0 +1,141 @@
+# A Builder's Guide to Note-Taking
+
+Your brain is a leaky bucket. If you're dedicated to filling it with knowledge, you should be equally dedicated to sealing the leak. Here's how.
+
+I'm Tim. I'm a builder. I've been building companies since I was in college. Along my journey I've met hundreds of people, discovered hundreds of cool companies, taken hundreds of meetings - you get the point, there's been a lot of sh*t to keep track of.
+
+A year ago I realized my leaky bucket problem while trying to do some market research for my latest project. People would say, "Have you heard of X company?" The name sounded familiar, but I couldn't place where I'd heard it before. "Oh! I met someone who used to work there! What was their name..."
+
+I had been taking notes but the knowledge wasn't easily retrievable. It wasn't organized. It wasn't navigable. I was storing knowledge like I stored my clothing: in a crumpled heap at the back of my closet, tossed in haphazardly from the doorway.
+
+If your knowledge closet looks like this, you've come to the right place. Some call me the Marie Kondo of knowledge (not really, but feel free to start the trend).
+
+## An Intro to Knowledge Management™
+
+When you write code, you don't just write it once, deploy the application, and never touch it again. Over time, bugs will pop up, code will become outdated, and things will start to fail. Untouched code depreciates by default. Useful code is actively managed to stay useful.
+
+The same is true with knowledge. Welcome to knowledge management. I define knowledge management as the process of capturing, codifying, and exploiting knowledge for long term use. Let's break down those three processes to explore them more:
+
+*Knowledge management is the process of capturing, codifying, and exploiting knowledge for long term use*
+
+### Knowledge Capture
+
+Knowledge capture is the act of bookmarking an idea for your future self. It needs to be easy and seamless, so as to not interrupt your day. Too much friction here and the capture won't happen. A descent knowledge capturing mechanism is the lifeblood of any good note-taking system.
+
+You can assess the quality of a knowledge capturing mechanism by asking questions like: "How many clicks does it take to open a new note?", "How long does it take to jot something down?", "How often are these new notes revisited to further develop?"
+
+### Knowledge Codification
+
+Knowledge codification is the act of representing and arranging your knowledge in a systemic form, such as adhering to specific formatting (like tags or headers), or creating collections of notes (like folders or indexes). This is done to make exploitation of knowledge easier. If codification is too cumbersome, or systems too difficult to change, knowledge will become trapped, unable to be exploited.
+
+Codification is, in my opinion, the most important process, and designing the perfect set of rules for your use-case is where knowledge management becomes an art. We'll discuss this more later.
+
+### Knowledge Exploitation
+
+Knowledge exploitation is the act of leveraging your knowledge to further your goals. This of course involves knowledge retrieval: When you have a question, how easy is it to find an answer? But it also involves knowledge emergence: How easily can entirely new knowledge be created from within your existing system? The best knowledge management systems will make this easy.
+
+These three processes are vitally important to get right, and with these measuring sticks in mind, not every tool is created equal. Here's how to pick the best one.
+
+## Choosing the Right Tool
+
+There's a lot of tools in this space, so I'm going to highlight the four most popular. To understand how well each tool performs for knowledge management, we're going to rate each with respect to the three processes I've outlined above.
+
+### Evernote
+
+Launched in 2004, Evernote has been around for a long time. It's reliable and it's feature-set is mature. Thanks to a great web-clipper and a quick-capture feature, it performs well for knowledge capture. However, it's UX encourages a highly structured approach to knowledge organization, and unlike the other tools we'll discuss, there's no way to create dynamic references to other content, so your content is a lot more siloed. Thus it performs poorly for knowledge codification and exploitation.
+
+### Notion
+
+Notion is probably the most talked about note-taking tool today. It's biggest strength is it's UX/UI - a combination of a powerful feature-set with a gorgeous interface. This makes knowledge codification pretty easy. Notion's weakness is its slowness, which is a huge problem in knowledge management (slowness creates friction that discourages action). This means it performs poorly for knowledge capture and exploitation.
+
+### Roam
+
+Roam has led the charge on "networked thought". You can link to other notes inline [[Like This]] and navigate through those links with a click. It's kind of like making your own Wikipedia. This type of user experience performs well for knowledge codification and exploitation. As a capturing mechanism it can be slow (not as slow as Notion), but it does the trick.
+
+### Obsidian
+
+Obsidian is a competitor to Roam, also focused on "networked thought", but instead of being hosted online, Obsidian runs locally as it's own desktop application and works with local markdown files. This, in my opinion, is a huge advantage that manifests in two primary ways: (1) it makes the app incredibly fast - Obsidian will always be faster than its web-hosted counterparts; and (2) it makes the app incredibly extensible - you can write your own scripts or tap into a growing collection of community plug-ins. For these reasons, it performs incredibly well for knowledge codification and exploitation. It performs less well for knowledge capture (mobile app is still in beta, and there's no web clipper or anything), but it's only a matter of time until the right plug-in solves this.
+
+![Comparison](/note-taking/comparison.png)
+
+## Getting Started (Obsidian)
+
+If you're looking for one lesson to take from this essay, let it be this: Your perfect knowledge management system is discovered, not planned. When starting out, prioritize simplicity and flexibility at all costs. Only formalize a system when it's absolutely necessary. In other words, pavement follows dirt.
+
+*Your perfect knowledge management system is discovered, not planned. When starting out, prioritize simplicity and flexibility at all costs. Only formalize a system when it's absolutely necessary. In other words, pavement follows dirt.*
+
+That being said, since this is a "Builder's Guide", there's a bit of structure we can safely assume will be necessary for our use.
+
+The remainder of this essay will review some of this suggested structure. As you can probably tell, I favor Obsidian, so that'll be the focus of my specific examples. Some of what follows will not be applicable to other tools (With Roam, it's pretty much all the same, Notion and Evernote not so much).
+
+### Tags
+
+Obsidian allows you to make inline links out to other notes as well as review what other notes link back to it (called "backlinks"). Given this, notes can function similarly to tags, except they have the added benefit of holding content themselves. This begs the question: why use tags at all?
+
+I like to use tags as metadata. My tags denote either the type of note (#person #meeting #company) or the status of a note (#todo, #pending-contact). I could use notes to do this, but I appreciate having an entirely separate level of information for these high-level categories. It makes scripting and searching easier.
+
+### Entity Notes
+
+One of the most common types of notes you'll have is those that describe a discrete entity, like a person, or a company. I use #person and #company respectively.
+
+Obsidian supports parent tags, so you could do #entity/person and #entity/company if you want to keep your tags more organized, but I don't have that many tags, plus I think it looks cleaner when it's shorter.
+
+Here's an example of how I like to format my #person and #company notes. Obsidian offers a templating plugin to help speed up the note setup. You'll see a few things in here that we haven't talk about yet - like "PQ" and "CQ" as well as that section of code - we'll get to those soon.
+
+![John Smith](/note-taking/john-smith.png)
+
+### Source Notes
+
+![Source Note](/note-taking/source-note.png)
+
+The double colon ("::") it's for scripting purposes. I use that to set key-value pairs that I can later collect programmatically if I wish to. I don't do a lot of programmatic searching, but it's nice to know that I can if I need to. Plus, some of the plugins can interpret this formatting as well.
+
+## Qualifier Notes
+
+Qualifier notes are a concept I created for my own use, so it takes a bit of explaining. It grew from the desire to denote a specific relationship between two notes, rather than simply associating them vaguely.
+
+The presence of a link like [[Google]] does not in itself clarify the relationship between that link and the note where it's been written. Perhaps the note says "This is a competitor of [[Google]]", or maybe it says "This is a product of [[Google]]". Until there's an Obsidian plugin to assign relationships (it's being talked about), links will only ever denote weak associations.
+
+I made up the "Qualifier" note type to help with this. When Note X is linked to a qualifier note, it means that the Note X can be described, at least in part, by that qualifier. Here's an example:
+
+![John Smith2](/note-taking/john-smith2.png)
+
+"Startup Founder" is a title of a note that describes a general topic. Any notes linked to that note are simply associated in some way to the concept of a "Startup Founder". "Startup Founder (PQ)", on the other hand, is the title of a note that describes a specific qualification. Any notes linked to that note are people who are startup founders.
+
+By now you've probably guessed that "PQ" stands for Person Qualifier. I also use "CQ" notes for Company Qualifiers. Here's an example of what a Qualifier note looks like when you open it:
+
+![PQ](/note-taking/pq.png)
+
+The drawer on the right shows all the backlinks, which is a list of startup founders. Sometimes that's good enough, but I can also drag those links onto the page and organize the list more manually as you can see I've done here.
+
+## Plugins
+
+The community plug-ins is where Obsidian really shines. My favorites are Calendar, Dataview, Imgur Plugin, Kanban, Sliding Panes, and Templater. I highly recommend them. In particular, Dataview really changes the game. It allows you to query your notes with SQL-esque code. If you're a developer, you'll love this. If you're not, it's a great way to dip your toes into programming! Here's an example of what you can do with it:
+
+![Plugins](/note-taking/plugins.png)
+
+That section of code in yellow generates a list of meetings you've had with John Smith. The code is run when you shift from "edit mode" to "preview mode" (Ctrl + E). Another one of my favorite use-cases is generating a list of people meeting a certain query who I've met with at least once. That's super handy.
+
+## The Hard Part
+
+Here's what's going to happen: you're going to get super excited and take a bunch of notes. You're going to set some basic formatting ground rules to stay organized. And one day you're going to realize that something's just not working well. Maybe your note titles are too vague. Maybe your tagging system is too confusing. Maybe your formatting is too cumbersome. You'll want to make a change to your system.
+
+This is okay. This is progress. This is you discovering your ideal approach.
+
+The bad news is that it's going to be annoying to make systemic changes no matter what. The good news is because you've chosen Obsidian you can do so much more easily than with any other tool by writing code or using a plugin.
+
+My most recent systemic change was when I created the "Qualifier" notes. I had previously been using tags for the same use-case and realized that tags were way worse than notes for this job. So I programmatically converted all instances of these tags from this: #tag-tile, to this: [[Tag Title (PQ)]].
+
+If you end up doing something like this: make a backup of your notes.
+
+If you hit this point and you're having trouble making a bulk change, feel free to [hit me up](https://twitter.com/itstimconnors) or ask your question to the [Obsidian community](https://obsidian.md/community).
+
+## Conclusion
+
+If you're feeling overwhelmed by everything you just read, don't be. This is the system that makes sense for me at this point. Yours may be way simpler. And mine was way simpler when I started out. These rules and techniques emerged from necessity only when I started collecting hundreds of notes. So feel free to skip these techniques and revisit them in 6 months. They may make more sense to you then. Whatever you do: just start.
+
+Effective knowledge management sounds incredibly dull and nerdy but it's truly one of the most useful practices you can have as a builder. Since starting, I've collected over 3,000 notes related to my startup journey. I never forget a person or a company or a meeting I have. I jump around my knowledge base like a monkey and I'm constantly discovering new things within it.
+
+Here's a picture of all my notes, with Obsidian's graph visualizer. There's something almost organic-looking about it, right? One might call it a second brain...
+
+![2nd Brain](/note-taking/2nd-brain.png)

@@ -1,0 +1,61 @@
+# An AI Personal Recruiter
+
+Note: This blog post was originally published on the Pearl blog on December 1st 2021. We've shut down that project and the blog along with it, so I've moved it here to serve as a historical record for myself and others.
+
+Our journey building Pearl began in 2019 with an idea to build a mobile app for company discovery, so job seekers could find cool places to work. It has obviously evolved a lot since then, but all the while our goal was to make career progress easier for everyone. That's why we ultimately became an SMS product. With a few text messages, you could be on your way to a new career.
+
+For a process that's typically plagued with complexity and emotional distress, having a voice to chat with offered a beautifully simple and humanizing experience. It gave folks the courage to try new things, to shoot their shot.
+
+![Pearl](/pearl/thumbnail.png)
+
+The way we pulled off this approach at scale was nothing short of remarkable. The Pearl technology is a custom stack of communication tools that allowed our team to send out message "flows" that advanced according to any arbitrary set of rules. For example, our primary "job flow" was something like this:
+
+Each day at noon, send a message to everyone who had a job in their queue asking if they'd be interested in the role. For those who answer affirmatively, send them a response indicating that the team will be notified of their interest, then send an email to the employer notifying them of a new candidate.
+
+There was a lot more nuance involved in the sending logic that I won't get into here, but here's what that flow looked like in our flow visualizer:
+
+![Flow Visualizer](/pearl/flow.png)
+
+At any time, a message might trigger the need for human intervention (like if someone said something our NLP model didn't understand), in which case the conversation could be continued manually by a member of our team.
+
+We also built a really intense tagging paradigm for capturing career preferences and matching them to opportunities. Tags were organized like a tree with parent and child nodes to connect interrelated topics, "react programming" was a child of "frontend engineering", for example.
+
+These conversational tools, paired with our tag-based matching, allowed us to send out fitting opportunities to our audience with astounding accuracy. Throughout the past 10 months, we achieved an accuracy of about 33%, meaning a user decided to pursue 1 in 3 roles we sent them. That's an order of magnitude more accurate than competing services.
+
+![How it works](/pearl/how-it-works.png)
+
+The point is, the tech here was intense and effective. For that, I have to thank my co-founder Alex who led the development work on all this. There are few people on this earth who could have pulled that off.
+
+However, despite this all, we're shutting it down.
+
+Why? Here's your answer in one chart:
+
+![Signups Chart](/pearl/signups.png)
+
+We're shutting down because we've been unable to attract the volume of users necessary to provide a sustainable talent matching service. Thousands of individuals signed up for Pearl and many of them shared their enthusiasm with us about the quality of the product, but thousands is not enough, especially after a year of live service.
+
+We always knew that talent acquisition would be the most critical blockade to overcome, but we failed to understand just how difficult that would be. I think that's because the primary blocker was hidden in the cultural backdrop, unrelated to product planning or growth hacking. That blocker was a social stigma.
+
+For the most part, folks don't want to advertise that they're looking for a job, for fear of their boss or colleagues finding out and awkward moments ensuing. They also don't want to assume that a friend is job-hunting, since it could be received as offensive. It goes unstated, but it's clear that our society views job-hunting as a distasteful act of desperation. Due to this stigma, most users of Pearl were shy to tell their friends about us, even if they were big fans of the product.
+
+We anticipated this headwind from the very start, but we always thought that with the right product, we could punch through it. Well after a year of punching, that doesn't seem to be true. It's possible, if not probable that we'd overcome this blocker eventually, but after a year of little progress, I wouldn't bet on us reversing a social stigma anytime soon, and our opportunity cost is too great. So we've decided to cut our losses.
+
+This is obviously super sad.
+
+We were and still are extremely energized about this mission, and it's a shame to walk away from it unconquered, especially after so many hours of sleepless nights. The decision to change course has been taking place over the past few weeks, and all the while I've tried desperately to avoid it, but nonetheless circle inevitably back to the same word spinning around in my head: waste.
+
+But as time smooths over what's happened, it's starting to become easier to recognize the objectively fortunate position we're in even now.
+
+It's incredible to realize just how much of our progress isn't the code on github or wireframes in figma. It's true that building these hard assets was the focus of our time, but the outsized value came from the relationships and learnings that popped out by accident. Those resources aren't going away now, so we'd be fools not to capitalize on them.
+
+So we're not going to hang up our hats. We've got our eyes on a new direction that we're really excited about, and should be ready to announce a new project within the next month or two.
+
+In closing, I'd like to say thank you.
+
+To our users, thank you. I know it was a risk putting your phone number into a random internet site, your bravery is not unnoticed 😆. I spent many hours having 1-to-1 conversations with many of you and it was always a pleasure. Weather you were sharing your enthusiasm or annoyance, every message was appreciated. All of it made us better.
+
+To the startups we worked with, thank you. Your appetite for new experiments was the lifeblood for our business, as it is for many others, and it's why I love the startup culture so much. I'm constantly charmed by the authenticity and camaraderie of the folks I meet in this scene. It makes the job of working with you all a joy.
+
+And finally, to our investors, thank you. You took the biggest risk of all and we're determined to show you that you made the right call. We knew you were a good group, but I was nevertheless astounded by your level of support for us during this transition. This is a big bump in our road - I won't sugarcoat it - but it's also an exciting new opportunity to shoot for the skies, and I'm glad you see it that way too.
+
+See you in the next chapter.
