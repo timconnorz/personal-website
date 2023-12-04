@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 if (typeof window !== 'undefined') {
+  console.log("Initializing PostHog")
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || "", {
     api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     capture_pageview: false // Disable automatic pageview capture, as we capture manually
@@ -13,18 +14,24 @@ if (typeof window !== 'undefined') {
 }
 
 export function PostHogPageview(): JSX.Element {
+  console.log("PostHogPageview")
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (pathname) {
-      let url = window.origin + pathname;
-      if (searchParams && searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`;
+    try {
+      console.log("Sending pageview")
+      if (pathname) {
+        let url = window.origin + pathname;
+        if (searchParams && searchParams.toString()) {
+          url = url + `?${searchParams.toString()}`;
+        }
+        posthog.capture("$pageview", {
+          $current_url: url,
+        });
       }
-      posthog.capture("$pageview", {
-        $current_url: url,
-      });
+    } catch (error) {
+      console.error("Error sending pageview:", error);
     }
   }, [pathname, searchParams]);
 

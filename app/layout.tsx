@@ -2,6 +2,7 @@ import React, { ReactNode, Suspense } from "react";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { PHProvider, PostHogPageview } from "./providers";
+// import PostHogClient from "./clients/posthog";
 
 const inter = Inter({
   subsets: ["latin"],
