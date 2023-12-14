@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply text-gray-900;
+  @apply text-gray-700;
 }
 
 h1 {
@@ -19,8 +19,14 @@ h2 {
   @apply font-medium;
 }
 
+h3 {
+  @apply text-base;
+  @apply mt-8;
+  @apply mb-3;
+  @apply font-medium;
+}
+
 p {
-  @apply text-gray-700;
   @apply text-sm;
   @apply mb-4;
 }
@@ -37,6 +43,24 @@ ol li {
   @apply text-sm;
 }
 
+ul, ol {
+  @apply mb-4;
+}
+
 a {
   @apply hover:underline;
+}
+
+.my-image {
+  @apply max-h-80;
+  @apply my-9;
+  @apply mx-auto;
+}
+
+Blockquote {
+  @apply border-l-4;
+  @apply border-gray-400;
+  @apply pl-4;
+  @apply italic;
+  @apply my-4;
 }

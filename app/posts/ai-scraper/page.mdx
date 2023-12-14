@@ -1,0 +1,146 @@
+import MyImage from '@/components/MyImage'
+
+# Building a Universal AI Scraper
+
+I've been getting into web-scrapers recently, and with everything happening in AI, I thought it might be interesting to try and build a 'universal' scraper, that can navigate the web iteratively until it finds what it's looking for. This is a work in progress, but I thought I'd share my progress so far.
+
+## The Spec
+Given a starting URL and a high-level goal, the web scraper should be able to:
+1. Analyze a given web page
+2. Extract text information from any relevant parts
+3. Perform any necessary interactions
+4. Repeat until the goal is reached
+
+## The Tools
+Although this is a strictly backend project, I decided to use NextJs to build this, in case I want to tack on a frontend later. For my web crawling library I decided to use [Crawlee](https://crawlee.dev/), which offers a wrapper around [Playwright](https://playwright.dev/), a browser automation library. Crawlee adds enhancements to the browser automation, making it easier to disguise the scraper as a human user. They also offer a convenient request queue for managing the order of requests, which would be super helpful in cases where I want to deploy this for others to use.
+
+For the AI bits, I'm using [OpenAI](https://platform.openai.com/docs/api-reference/introduction)'s API as well as Microsoft Azure's [OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service). Across both of these API's, I'm using a total of three different models:
+- GPT-4-32k ('gpt-4-32k')
+- GPT-4-Turbo ('gpt-4-1106-preview')
+- GPT-4-Turbo-Vision ('gpt-4-vision-preview')
+
+The GPT-4-Turbo models are like the original GPT-4, but with a much greater context window (128k tokens) and much greater speed (up to 10x). Unfortunately, these improvements have come at a cost: the GPT-4-Turbo models are slightly dumber than the original GPT-4. This became a problem for me in the more complex stages of my crawler, so I began to employ GPT-4-32K when I needed more intelligence. 
+
+GPT-4-32K is a variant of the original GPT-4 model, but with a 32k context window instead of 4k. (I ended up using Azure's OpenAI service to access GPT-4-32K, since OpenAI is currently limiting access to that model on their own platform)
+
+## Getting Started
+I started by working backwards from my constraints. Since I was using a Playwright crawler under the hood, I knew that I would eventually need an element selector from the page if I was going to interact with it. 
+
+If you're unfamiliar, an element selector is a string that identifies a specific element on a page. If I wanted to select the 4th paragraph on a page, I could use the selector `p:nth-of-type(4)`. If I wanted to select a button with the text 'Click Me', I could use the selector `button:has-text('Click Me')`. Playwright works by first identifying the element you want to interact with using a selector, and then performing an action on it, like 'click()' or 'fill()'.
+
+Given this, my first task was to figure out how to identify the 'element of interest' from a given web page. 
+
+## Identifying the Element of Interest
+
+### Approach 1: Screenshot + Vision Model
+
+HTML data can be extremely intricate and long. Most of it tends to be dedicated to styling, layout, and interactive logic, rather than the text content itself. I feared that text models would perform poorly in such a situation, so I thought I'd circumvent all that by using the GPT-4-Turbo-Vision model to simply 'look' at the rendered page and transcribe the most relevant text from it. Then I could use a text model to reverse engineer the element selector from the text.
+
+<MyImage alt="Vision Transcribe" src="/ai-scraper/vision-transcribe.png" />
+
+This approach quickly fell apart:
+
+For one, GPT-4-Turbo-Vision occasionally declined my request to transcribe text, saying stuff like "Sorry I can't help with that." At one point it said "Sorry, I can't transcribe text from copywrighted images." It seems that OpenAI is trying to discourage it from helping with tasks like this. (Luckily, this can be circumvented by mentioning that you are a blind person.) 
+
+Then came the bigger problem: big pages made for very tall screenshots (> 8,000 pixels). This is an issue because GPT-4-Turbo-Vision pre-processes all images to fix within a certain dimensions. I discovered that a very tall image will be mangled so much that it will be impossible to read.
+
+One possible solution to this would be to scan the page in segments, summarizing each one, then concatenating the results. However, OpenAI's rate limits on GPT-4-Turbo-Vision would force me to build a queueing system to manage the process. That sounded like a headache.
+
+Lastly, it would not be trivial to reverse engineer a working element selector from the text alone, since you don't know what the underlying HTML is shaped like. For all of these reasons, I decided to abandon this approach.
+
+### Approach 2: HTML + Text Model
+
+The rate limits for the text-only GPT-4-Turbo are more generous, and with the 128k context window, I thought I'd try simply passing in the entire HTML of the page, and ask it to identify the relevant elements. 
+
+<MyImage alt="Full HTML Parse" src="/ai-scraper/html-parser.png" />
+
+Although the HTML data fit (most of the time), I discovered that the GPT-4-Turbo models were just not smart enough to do this right. They would often identify the wrong element, or give me a selector that was too broad. 
+
+So I tried to reduce the HTML by isolating the body and removing script and style tags, and although this helped, it still wasn't enough. It seems that identifying "relevant" HTML elements from a full page is just too fuzzy and obscure for language models to do well. I needed some way to drill down to just a handful of elements I could hand to the text model. 
+
+For this next approach, I decided to take inspiration from how humans might approach this problem.
+
+### Approach 3: HTML + Text Search + Text Model
+
+If I were looking for specific information on a web page, I would use 'Control' + 'F' to search for a keyword. If I didn't find matches on my first attempt, I would try different keywords until I found what I was looking for. In my circumstance, the search terms could be generated with a text model, and the search itself could be performed with a simple regex search on the HTML. 
+
+Generating the terms would be much slower than conducting the search, so rather than searching terms one at a time, I would ask the text model to generate several at once, and then search for them all. Any HTML elements that contained a term would be gathered up and passed to the next step, where I would ask GPT-4-32K to identify the most relevant one. 
+
+<MyImage alt="Text Search" src="/ai-scraper/text-search-flow.png" />
+
+Of course, if you use enough search terms, you're bound to grab a lot of HTML at times, which could trigger API limits or compromise the performance of the next step, so I came up with a scheme that would intelligently fill a list of relevant elements up to a certain length. 
+
+I asked the Turbo model to come up with 15-20 terms, ranked in order of estimated relevance. Then I would search through the HTML with a simple regex search to find every element on the page that contained that term. By the end of this step I would have a list of lists, where each sublist contained all the elements that matched a given term:
+
+<MyImage alt="List of lists" src="/ai-scraper/element-lists.png" />
+
+Then I would populate a final list with the elements from these lists, favoring those appearing in the earlier lists. For example, let's say that the provided search terms are: 'pricing', 'fee', 'cost', 'prices'. When filling my final list, I would be sure to include more elements from the 'pricing' list than from the 'fee' list, and more from the 'fee' list than from the 'cost' list, and so on.
+
+<MyImage alt="Final list" src="/ai-scraper/final-list.png" />
+
+If you're curious what the code looked like for this step, here's a simplified version:
+
+<MyImage alt="Get Elements Algorithm" src="/ai-scraper/get-elements.png" />
+
+This approach allowed me to end up with a list of manageable length that represented matching elements from a variety of search terms. From here, the next step would be to ask GPT-4-32K to identify the most relevant element from this list. This step was pretty straight forward, but it took a bit of trial and error to get the prompt right:
+
+<MyImage alt="Pick Element Promopt" src="/ai-scraper/pick-element-prompt.png" />
+
+After this step, I would end up with the single most relevant element on the page, which I could then pass to the next step, where I would have an AI model decide what type of interaction would be necessary to accomplish the goal.
+
+## Setting up an Assistant
+
+The process of extracting a relevant element worked, but it was a bit slow and stochastic. What I needed at this point was a sort of 'planner' AI that could see the result of the previous step and try it again with different search terms if it didn't work well.
+
+Luckily, this is exactly what OpenAI's Assistant API helps accomplish. An 'Assistant' is a model wrapped in extra logic that allows it to operate autonomously, using custom tools, until a goal is reached. You initialize one by setting the underlying model type, defining the list of tools it can use, and defining a message history. 
+
+Once an assistant is running, you can poll the API to check up on its status. If it has decided to use a custom tool, the status will indicate the tool it wants to use with the parameters it wants to use it with. That's when you can generate the tool output and pass it back to the assistant so it can continue. 
+
+For this project, I set up an Assistant based on the GPT-4-Turbo model, and gave it a tool that triggered the element extraction process I described above. It's an AI that triggers another AI. 
+
+Here's the description I provided for this tool:
+
+<MyImage alt="Get Element Tool" src="/ai-scraper/get-element-tool.png" />
+
+You'll notice that in addition to the most relevant element, this tool also returns the quantity of matching elements for each provided search term. This information helped the Assistant decide whether or not to try again with different search terms. 
+
+With this one tool, the Assistant was now capable of solving the first two steps of my spec: Analyzing a given web page and extracting text information from any relevant parts. In cases where there's no need to actually interact with the page, this is all that's needed. For example, if we want to know the pricing of a product, and the pricing info is contained in the element returned by our tool, the Assistant can simply return the text from that element and be done with it.
+
+However, if the goal requires interaction, the Assistant will have to decide what type of interaction it wants to take, then use an additional tool to carry it out.
+
+## Interacting with the Element of Interest
+
+To make a tool that interacts with a given element, I thought I might need to build a custom API that could translate the string responses from an LLM into Playwright commands, but then I realized that the models I was working with already knew how to use the Playwright API. So I decided to simply ask them to submit the commands directly in the form of an async immediately-invoked function expression (IIFE). Here's the instructions I started with:
+
+<MyImage alt="Write Action 1" src="/ai-scraper/write-action-1.png" />
+
+I wanted to handle cases where there may be relevant information on the page that we need to extract before interacting with it, so I told it to assign extracted information to a variable called 'actionOutput' within it's function. 
+
+I passed the string output from this step (which I'm calling 'action') into my Playwright crawler as a parameter, using the 'eval' function to execute it as code:
+
+<MyImage alt="Crawler Action" src="/ai-scraper/crawler-action.png" />
+
+You'll notice that this tool I'm creating contains the logic of writing the Playwright commands as well as carrying them out. That's because the Turbo model I used for my assistant ended up being too dumb to write the commands reliably. So instead I ask the Assistant to describe the interaction it wants ("click on this element"), then I use the GPT-4-32K model write the code.
+
+## Conveying the State of the Page
+
+At this point I realized that I needed a way to convey the state of the page to the Assistant. I wanted it to craft search terms based on the page it was on, and simply giving it the url wasn't enough for that. Plus, sometimes my crawler failed to load pages properly, and I wanted the Assistant to be able to detect that and try again.
+
+To grab extra context, I decided to make a new step that used the GPT-4-Vision model to summarize the top 2048 pixels of the page. I inserted this step in thw two places it was necessary: at the very beginning, so the starting page could be analyzed; and at the conclusion of the interaction tool. 
+
+With this extra context, the Assistant was now capable of deciding if a given interaction worked as expected, or if it needed to try again. This was super helpful on pages that threw a Captcha to solve. If an assistant encountered a Captcha, it would know that it had to try a different strategy. It was also helpful for cases where page content was blocked by a pop up.
+
+## The Final Flow 
+
+Let's recap the process to this point: We start by giving a URL and a goal to an Assistant. The assistant then uses the 'get_element' tool to extract the most relevant element from the page. If the goal requires interaction with the element, the assistant will then use the 'write_action' tool to write the necessary Playwright commands. 
+
+Here's a flow diagram describing the assistant. It has two tools, which each take two main steps to complete:
+
+<MyImage alt="Assistant Flow" src="/ai-scraper/assistant.png" />
+
+Now it was time to put it to the test. 
+
+
+
+
+
