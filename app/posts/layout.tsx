@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { usePathname } from 'next/navigation'
 
 export default function PostLayout({
   children,
@@ -9,9 +10,21 @@ export default function PostLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname()
+
+  console.log(pathname)
+
+  const goBack = () => {
+    const path = pathname.split('/');
+    path.pop();
+    let newPath = path.join('/');
+    if (newPath === "/posts") newPath = "/";
+    router.push(newPath);
+  }
+
   return (
     <div className="mt-8">
-      <button onClick={() => router.back()}>
+      <button onClick={goBack}>
         <Image
           src="/left-caret.svg"
           alt="left caret"
