@@ -28,15 +28,15 @@ I started by working backwards from my constraints. Since I was using a Playwrig
 
 If you're unfamiliar, an element selector is a string that identifies a specific element on a page. If I wanted to select the 4th paragraph on a page, I could use the selector `p:nth-of-type(4)`. If I wanted to select a button with the text 'Click Me', I could use the selector `button:has-text('Click Me')`. Playwright works by first identifying the element you want to interact with using a selector, and then performing an action on it, like 'click()' or 'fill()'.
 
-Given this, my first task was to figure out how to identify the 'element of interest' from a given web page. 
+Given this, my first task was to figure out how to identify the 'element of interest' from a given web page. From here on out, I'll refer to this function as 'GET_ELEMENT'.
 
-## Identifying the Element of Interest
+## Getting the Element of Interest
 
 ### Approach 1: Screenshot + Vision Model
 
-HTML data can be extremely intricate and long. Most of it tends to be dedicated to styling, layout, and interactive logic, rather than the text content itself. I feared that text models would perform poorly in such a situation, so I thought I'd circumvent all that by using the GPT-4-Turbo-Vision model to simply 'look' at the rendered page and transcribe the most relevant text from it. Then I could use a text model to reverse engineer the element selector from the text.
+HTML data can be extremely intricate and long. Most of it tends to be dedicated to styling, layout, and interactive logic, rather than the text content itself. I feared that text models would perform poorly in such a situation, so I thought I'd circumvent all that by using the GPT-4-Turbo-Vision model to simply 'look' at the rendered page and transcribe the most relevant text from it. Then I could search through the raw HTML for the element that contained that text.
 
-<MyImage alt="Vision Transcribe" src="/ai-scraper/vision-transcribe.png" />
+<MyImage alt="Get Element Attempt 1" src="/ai-scraper/get_element_1.png" />
 
 This approach quickly fell apart:
 
@@ -52,7 +52,7 @@ Lastly, it would not be trivial to reverse engineer a working element selector f
 
 The rate limits for the text-only GPT-4-Turbo are more generous, and with the 128k context window, I thought I'd try simply passing in the entire HTML of the page, and ask it to identify the relevant elements. 
 
-<MyImage alt="Full HTML Parse" src="/ai-scraper/html-parser.png" />
+<MyImage alt="Get Element Attempt 2" src="/ai-scraper/get_element_2.png" />
 
 Although the HTML data fit (most of the time), I discovered that the GPT-4-Turbo models were just not smart enough to do this right. They would often identify the wrong element, or give me a selector that was too broad. 
 
@@ -62,11 +62,13 @@ For this next approach, I decided to take inspiration from how humans might appr
 
 ### Approach 3: HTML + Text Search + Text Model
 
-If I were looking for specific information on a web page, I would use 'Control' + 'F' to search for a keyword. If I didn't find matches on my first attempt, I would try different keywords until I found what I was looking for. In my circumstance, the search terms could be generated with a text model, and the search itself could be performed with a simple regex search on the HTML. 
+If I were looking for specific information on a web page, I would use 'Control' + 'F' to search for a keyword. If I didn't find matches on my first attempt, I would try different keywords until I found what I was looking for. 
 
-Generating the terms would be much slower than conducting the search, so rather than searching terms one at a time, I would ask the text model to generate several at once, and then search for them all. Any HTML elements that contained a term would be gathered up and passed to the next step, where I would ask GPT-4-32K to identify the most relevant one. 
+The benefit of this approach is that a simple text search is really fast and simple to implement. In my circumstance, the search terms could be generated with a text model, and the search itself could be performed with a simple regex search on the HTML.
 
-<MyImage alt="Text Search" src="/ai-scraper/text-search-flow.png" />
+Generating the terms would be much slower than conducting the search, so rather than searching terms one at a time, I could ask the text model to generate several at once, then search for them all concurrently. Any HTML elements that contained a search term would be gathered up and passed to the next step, where I could ask GPT-4-32K to pick the most relevant one. 
+
+<MyImage alt="Get Element Attempt 3" src="/ai-scraper/get_element_3.png" />
 
 Of course, if you use enough search terms, you're bound to grab a lot of HTML at times, which could trigger API limits or compromise the performance of the next step, so I came up with a scheme that would intelligently fill a list of relevant elements up to a certain length. 
 
@@ -74,15 +76,35 @@ I asked the Turbo model to come up with 15-20 terms, ranked in order of estimate
 
 <MyImage alt="List of lists" src="/ai-scraper/element-lists.png" />
 
-Then I would populate a final list with the elements from these lists, favoring those appearing in the earlier lists. For example, let's say that the provided search terms are: 'pricing', 'fee', 'cost', 'prices'. When filling my final list, I would be sure to include more elements from the 'pricing' list than from the 'fee' list, and more from the 'fee' list than from the 'cost' list, and so on.
+Then I would populate a final list with the elements from these lists, favoring those appearing in the earlier lists. For example, let's say that the ranked search terms are: 'pricing', 'fee', 'cost', and 'prices'. When filling my final list, I would be sure to include more elements from the 'pricing' list than from the 'fee' list, and more from the 'fee' list than from the 'cost' list, and so on.
+
+Once the final list hit a certain token length, I would stop filling it. This way, I could be sure that I would never exceed the token limit for the next step.
 
 <MyImage alt="Final list" src="/ai-scraper/final-list.png" />
 
-If you're curious what the code looked like for this step, here's a simplified version:
+If you're curious what the code looked like for this algorithm, here's a simplified version:
 
 <MyImage alt="Get Elements Algorithm" src="/ai-scraper/get-elements.png" />
 
-This approach allowed me to end up with a list of manageable length that represented matching elements from a variety of search terms. From here, the next step would be to ask GPT-4-32K to identify the most relevant element from this list. This step was pretty straight forward, but it took a bit of trial and error to get the prompt right:
+This approach allowed me to end up with a list of manageable length that represented matching elements from a variety of search terms, yet favoring terms that were ranked higher in relevance.
+
+Then came another snag: sometimes the information you need isn't in the matching element itself, but in a sibling or parent element.
+
+Let's say that my AI is trying to find out the capital of Cuba. It would search the word 'capital' and find this element in orange. The problem is that the information we need is in the green element - a sibling. We've gotten close to the answer, but without including both elements, we won't be able to solve the problem. 
+
+<MyImage alt="Sibling Problem" src="/ai-scraper/sibling.png" />
+
+To solve this problem, I decided include 'parents' as an optional parameter in my element search function. Setting a parent of 0 meant that the search function would return only the element that directly contained the text (which natually includes the children of that element). 
+
+Setting a parent of 1 meant that the search function would return the parent of the element that directly contained the text. Setting a parent of 2 meant that the search function would return the grandparent of the element that directly contained the text, and so on. In this Cuba example, setting a parent of 2 would return the HTML for this entire section in red:
+
+<MyImage alt="Parent Grandparent" src="/ai-scraper/parent-grandparent.png" />
+
+I decided to set the default parent to 1. Any higher and I could be grabbing huge amounts of HTML per match.
+
+So now that we've gotten a list of manageable size, with a helpful amount of parent context, it was time to move to the next step: I wanted to ask GPT-4-32K to pick the most relevant element from this list.
+
+This step was pretty straight forward, but it took a bit of trial and error to get the prompt right:
 
 <MyImage alt="Pick Element Promopt" src="/ai-scraper/pick-element-prompt.png" />
 
@@ -92,55 +114,243 @@ After this step, I would end up with the single most relevant element on the pag
 
 The process of extracting a relevant element worked, but it was a bit slow and stochastic. What I needed at this point was a sort of 'planner' AI that could see the result of the previous step and try it again with different search terms if it didn't work well.
 
-Luckily, this is exactly what OpenAI's Assistant API helps accomplish. An 'Assistant' is a model wrapped in extra logic that allows it to operate autonomously, using custom tools, until a goal is reached. You initialize one by setting the underlying model type, defining the list of tools it can use, and defining a message history. 
+Luckily, this is exactly what OpenAI's [Assistant API](https://platform.openai.com/docs/assistants/overview) helps accomplish. An 'Assistant' is a model wrapped in extra logic that allows it to operate autonomously, using custom tools, until a goal is reached. You initialize one by setting the underlying model type, defining the list of tools it can use, and sending it messages.
 
 Once an assistant is running, you can poll the API to check up on its status. If it has decided to use a custom tool, the status will indicate the tool it wants to use with the parameters it wants to use it with. That's when you can generate the tool output and pass it back to the assistant so it can continue. 
 
-For this project, I set up an Assistant based on the GPT-4-Turbo model, and gave it a tool that triggered the element extraction process I described above. It's an AI that triggers another AI. 
+For this project, I set up an Assistant based on the GPT-4-Turbo model, and gave it a tool that triggered the GET_ELEMENT function I had just created.
 
-Here's the description I provided for this tool:
+Here's the description I provided for the GET_ELEMENT tool:
 
 <MyImage alt="Get Element Tool" src="/ai-scraper/get-element-tool.png" />
 
 You'll notice that in addition to the most relevant element, this tool also returns the quantity of matching elements for each provided search term. This information helped the Assistant decide whether or not to try again with different search terms. 
 
-With this one tool, the Assistant was now capable of solving the first two steps of my spec: Analyzing a given web page and extracting text information from any relevant parts. In cases where there's no need to actually interact with the page, this is all that's needed. For example, if we want to know the pricing of a product, and the pricing info is contained in the element returned by our tool, the Assistant can simply return the text from that element and be done with it.
+With this one tool, the Assistant was now capable of solving the first two steps of my spec: Analyzing a given web page and extracting text information from any relevant parts. In cases where there's no need to actually interact with the page, this is all that's needed. If we want to know the pricing of a product, and the pricing info is contained in the element returned by our tool, the Assistant can simply return the text from that element and be done with it.
 
-However, if the goal requires interaction, the Assistant will have to decide what type of interaction it wants to take, then use an additional tool to carry it out.
+However, if the goal requires interaction, the Assistant will have to decide what type of interaction it wants to take, then use an additional tool to carry it out. I refer to this additional tool as 'INTERACT_WITH_ELEMENT'
 
-## Interacting with the Element of Interest
+## Interacting with the Relevant Element
 
-To make a tool that interacts with a given element, I thought I might need to build a custom API that could translate the string responses from an LLM into Playwright commands, but then I realized that the models I was working with already knew how to use the Playwright API. So I decided to simply ask them to submit the commands directly in the form of an async immediately-invoked function expression (IIFE). Here's the instructions I started with:
+To make a tool that interacts with a given element, I thought I might need to build a custom API that could translate the string responses from an LLM into Playwright commands, but then I realized that the models I was working with already knew how to use the Playwright API (perks of it being a popular library!). So I decided to simply generate the commands directly in the form of an async immediately-invoked function expression (IIFE). 
+
+Thus, the plan became: 
+
+The assistant would provide a description of the interaction it wanted to take, I would use GPT-4-32K to write the code for that interaction, and then I would execute that code inside of my Playwright crawler.
+
+<MyImage alt="Interact With Element Tool" src="/ai-scraper/interact_with_website.png" />
+
+Here's the description I provided for the INTERACT_WITH_ELEMENT tool:
+
+<MyImage alt="Interact With Element Tool Instructions" src="/ai-scraper/interact-with-element-tool.png" />
+
+You'll notice that instead of having the assistant write out the full element, it simply provides a short identifier, which is much easier and faster. 
+
+Below are the instructions I gave to GPT-4-32K to help it write the code. I wanted to handle cases where there may be relevant information on the page that we need to extract before interacting with it, so I told it to assign extracted information to a variable called 'actionOutput' within it's function. 
 
 <MyImage alt="Write Action 1" src="/ai-scraper/write-action-1.png" />
 
-I wanted to handle cases where there may be relevant information on the page that we need to extract before interacting with it, so I told it to assign extracted information to a variable called 'actionOutput' within it's function. 
-
-I passed the string output from this step (which I'm calling 'action') into my Playwright crawler as a parameter, using the 'eval' function to execute it as code:
+I passed the string output from this step - which I'm calling the 'action' - into my Playwright crawler as a parameter, and used the 'eval' function to execute it as code (yes, I know this could be dangerous):
 
 <MyImage alt="Crawler Action" src="/ai-scraper/crawler-action.png" />
 
-You'll notice that this tool I'm creating contains the logic of writing the Playwright commands as well as carrying them out. That's because the Turbo model I used for my assistant ended up being too dumb to write the commands reliably. So instead I ask the Assistant to describe the interaction it wants ("click on this element"), then I use the GPT-4-32K model write the code.
+If you're wondering why I don't simply have the assistant provide the code for its interaction directly, it's because the Turbo model I used for the assistant ended up being too dumb to write the commands reliably. So instead I ask the Assistant to describe the interaction it wants ("click on this element"), then I use the beefier GPT-4-32K model write the code.
 
 ## Conveying the State of the Page
 
-At this point I realized that I needed a way to convey the state of the page to the Assistant. I wanted it to craft search terms based on the page it was on, and simply giving it the url wasn't enough for that. Plus, sometimes my crawler failed to load pages properly, and I wanted the Assistant to be able to detect that and try again.
+At this point I realized that I needed a way to convey the state of the page to the Assistant. I wanted it to craft search terms based on the page it was on, and simply giving it the url felt sub-optimal. Plus, sometimes my crawler failed to load pages properly, and I wanted the Assistant to be able to detect that and try again.
 
-To grab extra context, I decided to make a new step that used the GPT-4-Vision model to summarize the top 2048 pixels of the page. I inserted this step in thw two places it was necessary: at the very beginning, so the starting page could be analyzed; and at the conclusion of the interaction tool. 
+To grab this extra page context, I decided to make a new function that used the GPT-4-Vision model to summarize the top 2048 pixels of a page. I inserted this function in the two places it was necessary: at the very beginning, so the starting page could be analyzed; and at the conclusion of the INTERACT_WITH_ELEMENT tool, so the assistant could understand the outcome of its interaction. 
 
-With this extra context, the Assistant was now capable of deciding if a given interaction worked as expected, or if it needed to try again. This was super helpful on pages that threw a Captcha to solve. If an assistant encountered a Captcha, it would know that it had to try a different strategy. It was also helpful for cases where page content was blocked by a pop up.
+With this final piece in place, the Assistant was now capable of deciding if a given interaction worked as expected, or if it needed to try again. This was super helpful on pages that threw a Captcha or some other pop up. In such cases, the assistant would know that it had to circumvent the obstacle before it could continue.
 
 ## The Final Flow 
 
-Let's recap the process to this point: We start by giving a URL and a goal to an Assistant. The assistant then uses the 'get_element' tool to extract the most relevant element from the page. If the goal requires interaction with the element, the assistant will then use the 'write_action' tool to write the necessary Playwright commands. 
+Let's recap the process to this point: We start by giving a URL and a goal to an assistant. The assistant then uses the 'GET_ELEMENT' tool to extract the most relevant element from the page. 
 
-Here's a flow diagram describing the assistant. It has two tools, which each take two main steps to complete:
+If an interaction is appropriate, the assistant will use the 'INTERACT_WITH_ELEMENT' tool to write and execute the code for that interaction. It will repeat this flow until the goal has been reached.
 
-<MyImage alt="Assistant Flow" src="/ai-scraper/assistant.png" />
+<MyImage alt="Final Flow" src="/ai-scraper/final-flow.png" />
 
-Now it was time to put it to the test. 
+Now it was time to put it all to the test by seeing how well it could navigate through Wikipedia in search of an answer.
 
+## Testing the Assistant
 
+My ultimate goal is to build a universal web scraper that would work on every page, but for a starting test, I wanted to see how well it could work within the reliable envionment of Wikipedia, where each page contains a huge amount of links to many other pages. The assistant should have no problem finding information within this domain.
 
+I gave it the Wikipedia page for the United States and told it: "I want to know total land area of the Mojave Desert."
+
+The Unites States page contains nearly 1.5 million characters of HTML content, which roughly translates to 375,000 tokens. So this would be a good test of the system's ability to handle large amounts of data. 
+
+As anticipated, the assistant reached for the 'GET_ELEMENT' tool, but its initial search terms were poor. These terms were likely too specific to render exact matches on the page: 
+
+```console
+TOOL CALL] 🔧 get_element
+[REQUIRES_ACTION]
+Running 1 functions...
+{
+  "url": "https://en.wikipedia.org/wiki/United_States",
+  "searchTerms": [
+    "Mojave Desert link",
+    "Mojave link",
+    "desert link",
+    "link Mojave",
+    "link desert"
+  ],
+  "directive": "Find a link to the Mojave Desert page to get information on its total land area"
+}
+```
+
+Sure enough, the tool found 0 matches across all terms. 
+
+```console
+Searching for matching elements. Token limit: 10000
+Found 0 matching elements (0 tokens)
+No matching elements
+Sending Tool Output...
+  "tool_call_id": "call_aZbkE2kM02qjXL7kx5KDdeWb",
+  "output": "{"error":"Error: No matching elements found."}"
+```
+
+So, the assistant decided to try again, and this time it used a lot more terms, which were more generic:
+
+```console
+[TOOL CALL] 🔧 get_element
+[REQUIRES_ACTION]
+Running 1 functions...
+{
+  "url": "https://en.wikipedia.org/wiki/United_States",
+  "searchTerms": [
+    "Mojave",
+    "Desert",
+    "Mojave Desert",
+    "geography",
+    "landscape",
+    "environment",
+    "Nature",
+    "ecosystem",
+    "biome",
+    "land",
+    "climate",
+    "terrain",
+    "Landforms",
+    "physical"
+  ],
+  "directive": "Find a link to the Mojave Desert page on Wikipedia from the United States page"
+}
+```
+
+The tool found 134 matching elements across these terms, which totaled to over 3,000,000 tokens (probably because there's a lot of overlap among the returned elements). Luckily, the previously mentioned algorithm for selecting the final list of elements was able to pare this down to a list of 41 elements (I set the cap to 10,000 tokens). 
+
+Then, GPT-4-32K picked this element as the most relevant, which contains a link to the Wikipedia page for the Mojave Desert:
+
+```html
+<p>
+  <!-- Abbreviated for readability -->
+  <!-- ... --> 
+  <a href="/wiki/Sonoran_Desert" title="Sonoran Desert">Sonoran</a>, and 
+  <a href="/wiki/Mojave_Desert" title="Mojave Desert">Mojave</a> deserts.
+  <sup id="cite_ref-179" class="reference">
+    <a href="#cite_note-179">[167]</a>
+  </sup> 
+  <!-- ... -->
+</p>
+```
+
+If you're wondering why this element contains so extra HTML beyond just the link itself, it's because I set the 'parents' parameter to 1, which, if you recall, means that all matching elements will be returned with their immediate parent element. 
+
+After recieving this element as part of the 'GET_ELEMENT' tool output, the assistant decided to use the 'INTERACT_WITH_ELEMENT' tool to try and click on that link:
+
+```console
+[NEW STEP] 👉 [{"type":"function","name":"interact_with_element"}]
+Running 1 function...
+{
+  "elementCode": "16917",
+  "url": "https://en.wikipedia.org/wiki/United_States",
+  "directive": "Click on the link to the Mojave Desert page"
+}
+```
+
+The 'INTERACT_WITH_ELEMENT' tool used GPT-4-32K to process that idea into a Playwright action:
+
+```bash
+Running writeAction with azure32k...
+Write Action Response:
+"(async () => {\n  await page.click('p a[href=\"/wiki/Mojave_Desert\"]');\n})();"
+```
+
+My Playwright crawler ran the action, and the browser successfully navigated to the Mojave Desert page. 
+
+Finally, I processed the new page with GPT-4-Vision and sent a summary of the browser status back to the assistant as part of the tool output:
+
+```console
+Summarize Status Response:
+"We clicked on a link to the Wikipedia page for the Mojave Desert. And now we are looking at the Wikipedia page for the Mojave Desert."
+```
+
+The assistant decided that the goal was not yet reached, so it repeated the process on the new page. Once again, it's initial search terms were too specific, and the results were sparse. But on it's 2nd try, it came up with these terms:
+
+```console
+[TOOL CALL] 🔧 get_element
+[REQUIRES_ACTION]
+Running one function...
+{
+  "url": "https://en.wikipedia.org/wiki/Mojave_Desert",
+  "searchTerms": [
+    "square miles",
+    "square kilometers",
+    "km2",
+    "mi2",
+    "area",
+    "acreage",
+    "expansion",
+    "size",
+    "span",
+    "coverage"
+  ],
+  "directive": "Locate the specific section or paragraph that states the total land area of the Mojave Desert on the Wikipedia page"
+}
+```
+
+The 'GET_ELEMENT' tool initial found 21 matches, totaling to 491,000 tokens, which was pared down to 12. Then GPT-4-32K picked this as the most relevant of the 12, which contains the search term "km2":
+
+```html
+<tr>
+  <th class="infobox-label">Area</th>
+  <td class="infobox-data">81,000&nbsp;km<sup>2</sup>(31,000&nbsp;sq&nbsp;mi)</td>
+</tr>
+```
+
+This element corresponds to this section of the rendered page:
+
+<MyImage alt="Mojave Page" src="/ai-scraper/mojave-page.png" />
+
+In this case, we wouldn't have been able to find this answer if I hadn't set 'parents' to 1, because the answer we're looking for is in a sibling of the matching element, just like in our Cuba example.
+
+The 'GET_ELEMENT' tool passed the element back to the assistant, who correctly noticed that the information within satisfied our goal. Thus it completed it's run, letting me know that the answer to my question is 81,000 square kilometers:
+
+```console
+[FINAL MESSAGE] ✅ The total land area of the Mojave Desert is 81,000 square kilometers or 31,000 square miles.
+{
+  "status": "complete",
+  "info": {
+    "area_km2": 81000,
+    "area_mi2": 31000
+  }
+}
+```
+
+If you'd like to read the full logs from this run, you can find a copy of them [here](/posts/ai-scraper/logs)!
+
+## Closing Thoughts
+
+I had a lot of fun building this thing, and learned a ton. That being said, it's still a fragile system. I'm looking forward to taking it to the next level. Here are some of the things I'd like to improve about it:
+
+- Generating smarter search terms so it can find relevant elements faster
+- Implementing fuzzy search in my 'GET_ELEMENT' tool to account for slight variations in text
+- Using the vision model to label images & icons in the HTML so the assistant can interact with them
+- Enhancing the stealth of the crawler with residental proxies and other techniques
+
+Thanks for reading! If you have any questions or suggestions, feel free to reach out to me on [Twitter](https://twitter.com/itstimconnors) or via email at hi@timconnors.co
 
 
