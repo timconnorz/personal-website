@@ -6,7 +6,6 @@ const myBlockquote = (props: any) => {
         <Blockquote {...props} />
     )
 }
-  
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
     return {

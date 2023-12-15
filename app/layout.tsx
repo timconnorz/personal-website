@@ -10,9 +10,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Tim Connors",
-  description: "Here's a bit about me...",
-};
+  metadataBase: process.env.NODE_ENV === 'production' ? new URL("https://www.timconnors.co") : new URL("http://localhost:3000"),
+}
 
 export default function RootLayout({
   children,
