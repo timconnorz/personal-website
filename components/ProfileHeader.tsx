@@ -14,7 +14,7 @@ export default function ProfileHeader({
       <div className="w-1/3 md:w-1/4">
         <Image
           priority
-          src="/avatar.png"
+          src="/apple-avatar.png"
           alt="avatar"
           width={avatarSize}
           height={avatarSize}
