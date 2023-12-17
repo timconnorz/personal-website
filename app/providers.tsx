@@ -14,7 +14,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function PostHogPageview(): JSX.Element {
-  console.log("PostHogPageview")
+  // console.log("PostHogPageview")
   const pathname = usePathname();
   const searchParams = useSearchParams();
 

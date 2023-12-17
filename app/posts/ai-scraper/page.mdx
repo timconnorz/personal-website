@@ -1,9 +1,11 @@
----
-title: "Building a Universal AI Scraper"
-description: "What happens when we plug GPT-4 into a web browser? Let's find out."
----
-
 import MyImage from '@/components/MyImage'
+
+export const metadata = {
+  title: "Building a Universal AI Scraper",
+  description: "What happens when you let GPT-4 control a browser? Let's find out!",
+  author: "Tim Connors",
+}
+
 
 # Building a Universal AI Scraper
 
@@ -47,7 +49,7 @@ This approach quickly fell apart:
 
 For one, GPT-4-Turbo-Vision occasionally declined my request to transcribe text, saying stuff like "Sorry I can't help with that." At one point it said "Sorry, I can't transcribe text from copywrighted images." It seems that OpenAI is trying to discourage it from helping with tasks like this. (Luckily, this can be circumvented by mentioning that you are a blind person.) 
 
-Then came the bigger problem: big pages made for very tall screenshots (> 8,000 pixels). This is an issue because GPT-4-Turbo-Vision pre-processes all images to fix within a certain dimensions. I discovered that a very tall image will be mangled so much that it will be impossible to read.
+Then came the bigger problem: big pages made for very tall screenshots (> 8,000 pixels). This is an issue because GPT-4-Turbo-Vision pre-processes all images to fit within certain dimensions. I discovered that a very tall image will be mangled so much that it will be impossible to read.
 
 One possible solution to this would be to scan the page in segments, summarizing each one, then concatenating the results. However, OpenAI's rate limits on GPT-4-Turbo-Vision would force me to build a queueing system to manage the process. That sounded like a headache.
 
@@ -75,7 +77,7 @@ Generating the terms would be much slower than conducting the search, so rather 
 
 <MyImage alt="Get Element Attempt 3" src="/ai-scraper/get_element_3.png" />
 
-Of course, if you use enough search terms, you're bound to grab a lot of HTML at times, which could trigger API limits or compromise the performance of the next step, so I came up with a scheme that would intelligently fill a list of relevant elements up to a certain length. 
+Of course, if you use enough search terms, you're bound to grab a lot of HTML at times, which could trigger API limits or compromise the performance of the next step, so I came up with a scheme that would intelligently fill a list of relevant elements up to a custom length. 
 
 I asked the Turbo model to come up with 15-20 terms, ranked in order of estimated relevance. Then I would search through the HTML with a simple regex search to find every element on the page that contained that term. By the end of this step I would have a list of lists, where each sublist contained all the elements that matched a given term:
 
@@ -83,7 +85,7 @@ I asked the Turbo model to come up with 15-20 terms, ranked in order of estimate
 
 Then I would populate a final list with the elements from these lists, favoring those appearing in the earlier lists. For example, let's say that the ranked search terms are: 'pricing', 'fee', 'cost', and 'prices'. When filling my final list, I would be sure to include more elements from the 'pricing' list than from the 'fee' list, and more from the 'fee' list than from the 'cost' list, and so on.
 
-Once the final list hit a certain token length, I would stop filling it. This way, I could be sure that I would never exceed the token limit for the next step.
+Once the final list hit the predefined token length, I would stop filling it. This way, I could be sure that I would never exceed the token limit for the next step.
 
 <MyImage alt="Final list" src="/ai-scraper/final-list.png" />
 

@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { usePathname } from 'next/navigation'
+import { useRouter, usePathname } from "next/navigation";
 
 export default function PostLayout({
   children,
@@ -11,8 +10,6 @@ export default function PostLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname()
-
-  console.log(pathname)
 
   const goBack = () => {
     const path = pathname.split('/');
@@ -30,10 +27,12 @@ export default function PostLayout({
           alt="left caret"
           width={28}
           height={28}
-          className="fixed -translate-x-20 translate-y-2 opacity-75"
+          className="sm:fixed absolute sm:-translate-x-16 md:-translate-x-20 sm:translate-y-2 -translate-y-5 -translate-x-2 opacity-75"
         />
       </button>
+      <div className="sm:mt-0 mt-6">
       {children}
+      </div>
     </div>
   );
 }

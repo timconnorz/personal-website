@@ -2,22 +2,25 @@ import React, { ReactNode, Suspense } from "react";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { PHProvider, PostHogPageview } from "./providers";
-// import PostHogClient from "./clients/posthog";
+import Head from "next/head";
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
 
-export const metadata = {
-  metadataBase: process.env.NODE_ENV === 'production' ? new URL("https://www.timconnors.co") : new URL("http://localhost:3000"),
+interface LayoutProps {
+  children: React.ReactNode;
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata = {
+  metadataBase:
+    process.env.NODE_ENV === "production"
+      ? new URL("https://timconnors.co")
+      : new URL("http://localhost:3000"),
+};
+
+export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en" className={inter.className}>
       <Suspense>
