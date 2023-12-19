@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { PHProvider, PostHogPageview } from "./providers";
 import Head from "next/head";
+import Footer from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +28,12 @@ export default function RootLayout({ children }: LayoutProps) {
         <PostHogPageview />
       </Suspense>
       <PHProvider>
-        <body className="container max-w-xl mb-10">{children}</body>
+        <body>
+        <div className="container max-w-xl mb-10" >
+          {children}
+          <Footer />
+        </div>
+        </body>
       </PHProvider>
     </html>
   );

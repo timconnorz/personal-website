@@ -3,6 +3,8 @@
 @tailwind utilities;
 @import 'highlight.js/styles/vs2015.css';
 
+
+
 body {
   @apply text-gray-700;
 }

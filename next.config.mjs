@@ -5,7 +5,6 @@ import rehypeHighlight from 'rehype-highlight';
 // import remarkEmbedder from '@remark-embedder/core';
 // import oembedTransformer from '@remark-embedder/transformer-oembed';
 // import remarkFrontmatter from 'remark-frontmatter';
-// import recmaNextjsStaticProps from 'recma-nextjs-static-props'
 
 const withMDX = nextMDX({
   extension: /\.mdx?$/,
@@ -19,7 +18,6 @@ const withMDX = nextMDX({
       // [remarkEmbedder, { transformers: [oembedTransformer] }],
     ],
     rehypePlugins: [rehypeHighlight],
-    // recmaPlugins: [recmaNextjsStaticProps],
   },
 });
 
