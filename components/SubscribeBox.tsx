@@ -129,7 +129,7 @@ const SubscribeBox = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center mt-0 pt-4">
-        <Dialog open={open}>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger onClick={() => setOpen(true)} className="border border-1 p-2 rounded-md bg-gray-800 text-white text-sm">
             Subscribe
           </DialogTrigger>

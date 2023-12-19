@@ -5,6 +5,12 @@ import React from "react";
 import ProfileHeader from "@/components/ProfileHeader";
 import Stories from "@/components/Stories";
 import getPosts from "./getPosts";
+import Footer from "@/components/Footer";
+
+export const metadata = {
+  title: "Tim Connors",
+  description: "Software Entrepreneur and Engineer",
+};
 
 export default async function Home() {
   const posts = await getPosts();
@@ -20,7 +26,10 @@ export default async function Home() {
 
       <h2 className="mb-3">Projects</h2>
 
-      <Stories stories={posts || []} />
+      <div className="min-h-screen">
+        <Stories stories={posts || []} />
+        <Footer />
+      </div>
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+import Footer from "@/components/Footer";
 
 export default function PostLayout({
   children,
@@ -32,6 +33,7 @@ export default function PostLayout({
       </button>
       <div className="sm:mt-0 mt-6">
       {children}
+      <Footer />
       </div>
     </div>
   );

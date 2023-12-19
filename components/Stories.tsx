@@ -24,7 +24,7 @@ export default function Stories({ stories }: StoriesProps) {
     : sortedStories.filter(story => story.tag === selectedTag);
 
   return (
-    <div className="min-h-screen">
+    <div className="">
       <div className="pill-container overflow-x-scroll flex flex-row gap-2 mt-0 mb-8">
         <FilterPill
           active={selectedTag === "All"}
