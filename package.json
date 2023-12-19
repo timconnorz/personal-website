@@ -46,6 +46,7 @@
     "remark-mdx-next": "^0.1.1",
     "sharp": "^0.33.0",
     "tailwind-merge": "^2.0.0",
+    "tailwind-scrollbar-hide": "^1.1.7",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"
   },

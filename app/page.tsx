@@ -24,7 +24,7 @@ export default async function Home() {
       <h2 className="mb-3">About</h2>
       <p>{"I've built two small businesses and two venture-backed startups. I like cerebral movies, EDM festivals, and cute dogs. Recently moved to New York City."}</p>
 
-      <h2 className="mb-3">Projects</h2>
+      <h2 className="mb-3">My Work</h2>
 
       <div className="min-h-screen">
         <Stories stories={posts || []} />

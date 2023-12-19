@@ -10,7 +10,7 @@ export default function ProfileHeader({
 }) {
   const avatarSize = 110;
   return (
-    <div className="flex space-x-2 mt-10">
+    <div className="flex md:space-x-2 space-x-4 mt-10">
       <div className="w-1/3 md:w-1/4">
         <Image
           priority

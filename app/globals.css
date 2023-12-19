@@ -84,3 +84,18 @@ code {
 code.language-console {
   @apply whitespace-pre-wrap;
 }
+
+.fade-out {
+  position: relative;
+}
+
+.fade-out::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1));
+  pointer-events: none;
+}

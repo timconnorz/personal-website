@@ -92,6 +92,7 @@ const SubscribeForm = ({ closeDialog }:
                 <Input
                   placeholder="bob@example.com"
                   type="email"  
+                  className="text-md"
                   {...field}                
                 />
               </FormControl>
@@ -101,7 +102,9 @@ const SubscribeForm = ({ closeDialog }:
             </FormItem>
           )}
         />
-        <div className="flex flex-row justify-end"><Button type="submit">🎉 Submit</Button></div>
+        <div className="flex flex-row justify-center sm:justify-end w-full">
+          <Button className="sm:w-auto w-1/3" type="submit">🎉 Submit</Button>
+        </div>
       </form>
     </Form>
   )
@@ -135,7 +138,7 @@ const SubscribeBox = () => {
           </DialogTrigger>
           <DialogContent className="max-w-sm">
             <DialogTitle className="mt-5 mb-0 leading-7 font-normal text-gray-700">
-              Enter your email to recieve periodic email updates from me
+              Enter your email to recieve periodic updates from me!
             </DialogTitle>
             <div className="flex w-full max-w-sm items-center space-x-2">
               <SubscribeForm closeDialog={() => setOpen(false)}/>
