@@ -34,7 +34,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { EmailExistsError } from "@/lib/types";
-import jsConfetti from "@/app/clients/confetti";
+import JSConfetti from 'js-confetti'
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -45,6 +45,9 @@ const SubscribeForm = ({ closeDialog }:
     closeDialog: () => void;
   }
   ) => {
+    
+  const jsConfetti = new JSConfetti();
+
   // 1. Define your form.
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
