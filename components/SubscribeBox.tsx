@@ -57,7 +57,7 @@ const SubscribeForm = ({ closeDialog }:
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
-    addSubscriber(data.email).then((res) => {
+    addSubscriber({email: data.email, name: data.email}).then((res) => {
       jsConfetti.addConfetti({
         emojis: ['❤️', '✉️'],
      });

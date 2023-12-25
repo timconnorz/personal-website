@@ -1,38 +1,52 @@
 "use server"
-import prisma from '@/app/clients/prisma'
-
-import { Prisma } from '@prisma/client';
 import { EmailExistsError } from '@/lib/types';
+import prisma from './clients/prisma';
 
-export async function addSubscriber(email: string) {
-  try {
-    const sub = await prisma.subscribers.create({
-      data: {
-        email: email.trim().toLowerCase(),
-        date_subscribed: new Date(),
-      },
-    })
-    return sub
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-      throw new EmailExistsError();
-    } else {
-      console.error(e);
-    }
-    return null;
-  }
-}
-export async function getSubscribers() {
-  return await prisma.subscribers.findMany()
-}
-
-export async function unsubscribe(email: string) {
-  await prisma.subscribers.updateMany({
-    where: {
-      email,
+export async function addSubscriber({ email, name }: { email: string, name?: string }) {
+  // HTTP Request with Basic Auth
+  const response = await fetch(`${process.env.LISTMONK_URL}/api/subscribers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${Buffer.from(`${process.env.LISTMONK_USERNAME}:${process.env.LISTMONK_PASSWORD}`).toString('base64')}`,
     },
-    data: {
-      unsubscribed: true,
-    },
+    body: JSON.stringify({
+      email: email,
+      name: name,
+      lists: [Number(process.env.NEWSLETTER_LIST_ID)],
+      status: 'enabled',
+    }),
   })
+
+  // if the email already exits, response will be 409
+  if (response.status === 409) {
+    throw new EmailExistsError();
+  }
+
+  if (response.status !== 200) {
+    throw new Error('Error subscribing to newsletter')
+  }
+
+  const data = await response.json()
+  
+  console.log(data)
+
+  return data
 }
+
+// export async function migrateSubscribers() {
+//   const response = await prisma.subscribers.findMany()
+
+//   let errors = 0
+
+//   for (const subscriber of response) {
+//     try {
+//       await addSubscriber({ email: subscriber.email!, name: subscriber.email! })
+//     } catch (e) {
+//       errors++
+//       console.log(e)
+//     }
+//   }
+
+//   console.log(`Finished with ${errors} errors`)
+// }
