@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/form"
 import { EmailExistsError } from "@/lib/types";
 import JSConfetti from 'js-confetti'
+import { TailSpin } from 'react-loader-spinner';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -45,6 +46,8 @@ const SubscribeForm = ({ closeDialog }:
     closeDialog: () => void;
   }
   ) => {
+
+  const [loading, setLoading] = useState(false);
     
   const jsConfetti = new JSConfetti();
 
@@ -57,6 +60,7 @@ const SubscribeForm = ({ closeDialog }:
   })
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
+    setLoading(true);
     addSubscriber({email: data.email, name: data.email}).then((res) => {
       jsConfetti.addConfetti({
         emojis: ['❤️', '✉️'],
@@ -103,7 +107,9 @@ const SubscribeForm = ({ closeDialog }:
           )}
         />
         <div className="flex flex-row justify-center sm:justify-end w-full">
-          <Button className="sm:w-auto w-1/3" type="submit">🎉 Submit</Button>
+          <Button className="sm:w-auto w-1/3" type="submit">
+          {loading ? <TailSpin color="#BEBEBE" height={20} width={20} /> : 'Submit'}
+          </Button>
         </div>
       </form>
     </Form>

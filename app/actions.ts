@@ -3,6 +3,8 @@ import { EmailExistsError } from '@/lib/types';
 import prisma from './clients/prisma';
 
 export async function addSubscriber({ email, name }: { email: string, name?: string }) {
+  console.log(`Adding subscriber ${email}`)
+  
   // HTTP Request with Basic Auth
   const response = await fetch(`${process.env.LISTMONK_URL}/api/subscribers`, {
     method: 'POST',
@@ -24,7 +26,7 @@ export async function addSubscriber({ email, name }: { email: string, name?: str
   }
 
   if (response.status !== 200) {
-    throw new Error('Error subscribing to newsletter')
+    throw new Error(`Error subscribing to newsletter. Response: ${response.status} - ${response.statusText}`)
   }
 
   const data = await response.json()
