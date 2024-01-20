@@ -20,7 +20,7 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { addSubscriber } from "@/app/actions";
+import { addSubscriber, sendTextToTim } from "@/app/actions";
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -66,6 +66,7 @@ const SubscribeForm = ({ closeDialog }:
         emojis: ['❤️', '✉️'],
      });
       closeDialog();
+      sendTextToTim({message: "New subscriber! " + data.email})
     }).catch((err: any) => {
       console.log(err.message)
       if (err.message === "Email already exists") {

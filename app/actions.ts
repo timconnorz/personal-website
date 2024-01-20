@@ -1,6 +1,5 @@
 "use server"
 import { EmailExistsError } from '@/lib/types';
-import prisma from './clients/prisma';
 
 export async function addSubscriber({ email, name }: { email: string, name?: string }) {
   console.log(`Adding subscriber ${email}`)
@@ -36,19 +35,27 @@ export async function addSubscriber({ email, name }: { email: string, name?: str
   return data
 }
 
-// export async function migrateSubscribers() {
-//   const response = await prisma.subscribers.findMany()
+export async function sendTextToTim({message}: {message: string}) {
+  console.log(`Sending text to Tim: ${message}`)
 
-//   let errors = 0
+  // Construct the Basic Auth string
+  const authString = `Basic ${Buffer.from(`${process.env.TEXTBELT_AUTH_USERNAME}:${process.env.TEXTBELT_AUTH_PASSWORD}`).toString('base64')}`;
+  
+  // HTTP Request with Basic Auth
+  const response = await fetch(`${process.env.TEXTBELT_URL}/text`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': authString,
+    },
+    body: JSON.stringify({
+      number: process.env.TIM_PHONE_NUMBER,
+      message,
+    }),
+  })
 
-//   for (const subscriber of response) {
-//     try {
-//       await addSubscriber({ email: subscriber.email!, name: subscriber.email! })
-//     } catch (e) {
-//       errors++
-//       console.log(e)
-//     }
-//   }
+  if (response.status !== 200) {
+    throw new Error(`Error sending text to Tim. Response: ${response.status} - ${response.statusText}`)
+  }
 
-//   console.log(`Finished with ${errors} errors`)
-// }
+}

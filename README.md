@@ -8,6 +8,3 @@ export const metadata = {
   description: ...,
   author: ...,
 }
-
-## To push changes to Prisma client to DB
-npx prisma migrate dev --name <name of migration>

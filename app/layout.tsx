@@ -1,4 +1,4 @@
-import React, { ReactNode, Suspense } from "react";
+import React from "react";
 import "@/app/globals.css";
 import { Inter } from "next/font/google";
 import { PHProvider, PostHogPageview } from "./providers";
@@ -22,14 +22,10 @@ export const metadata = {
 export default function RootLayout({ children }: LayoutProps) {
   return (
     <html lang="en" className={inter.className}>
-      <Suspense>
-        <PostHogPageview />
-      </Suspense>
+      <PostHogPageview />
       <PHProvider>
         <body>
-        <div className="container max-w-xl mb-10" >
-          {children}
-        </div>
+          <div className="container max-w-xl mb-10">{children}</div>
         </body>
       </PHProvider>
     </html>
