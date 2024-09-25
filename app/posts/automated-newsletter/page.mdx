@@ -1,0 +1,61 @@
+export const metadata = {
+  title: "Automating a Newsletter with AI",
+  description: "I used an LLM to automate an email newsletter for New York's music scene.",
+  author: "Tim Connors",
+  tag: "Coding",
+  date: "2024-09-24"
+}
+
+# Automating a Newsletter with AI
+
+Back in 2017, with dreams of expanding [my music festival brand](/posts/far-out-fest) to new cities, I started a facebook group called "[NYC Musicians Wanted](https://www.facebook.com/groups/nycmusicianswanted)". The goal was to create a space where musicians could find gigs and opporunities to collaborate. 
+
+The festival didn't last too long, but the group stuck around, and today it's one of the largest music groups on facebook with over 30,000 members!
+
+As the group grew in size, moderating it became a big challenge, and it became full of self-promotion and spam. After trying and failing to mitigate the problem with more moderators and stricter rules, I decided on a different approach.
+
+I built **[nyc-musicians-wanted.com](https://nyc-musicians-wanted.com)** - a website where anyone can submit posts which are aggregated into a periodic newsletter. Each post is reviewed by a Large Language Model to ensure it follows the rules before being sent out to subscribers.
+
+![nyc-musicians-wanted.com](/automated-newsletter/og-image.png)
+
+### How I Built It
+
+I started with my go-to stack: NextJs for the web app, [Supabase](https://supabase.com) for the database, [Railway](https://railway.app) for the cloud hosting, and [shadcn](https://ui.shadcn.com) for UI components.
+
+Next I needed some way to prevent abuse. I didn't want a million bots signing up to receive my newsletter, and I *especially* didn't want a million bots submitting spam posts. Even though I was planning on picking a cheap language model, I could still rack up a large bill if I wasn't careful.
+
+I didn't want to complicate the site by asking users to "create an account" before they could do anything. Instead, I wanted to send the user a one-time code via email, which they'd enter as the final step of the submission or sign up process. 
+
+Luckily, Supabase Auth offers exactly this via their one-time code login method! It's super simple:
+
+![Supabase Auth Screenshot](/automated-newsletter/supabase-auth.png)
+
+When a user enters the code, supabase creates a user session and the user is logged in. If the user tried to submit a new post with the same email, they wouldn't need to enter the code again, because the session cookie would be saved to their browser. All of this is handled automatically by Supabase's auth sdk!
+
+Next it was time for the language model. 
+
+I wanted this newsletter to be free for everyone, so I had to use a less powerful model. Luckily Anthropic's Haiku was more than capable of handling the task. After running some tests, here's the prompt I settled on:
+
+![Automated Newsletter Prompt](/automated-newsletter/newsletter-prompt.png)
+
+For the email functionality, I chose Resend. In past projects I've used Mailgun and Sendgrid, but Resend's API was by far the simplest. 
+
+My one complaint is that they seem to have purposely hampered the developer experience of setting up programatic email blasts. They have a "Broadcasts" feature for sending out mass emails to an audience, but it can only be triggered manually via the web console. That was a bummer because Broadcasts automatically handle unsubscribe links too. 
+
+After some trial and error, I got the email functionality working with a custom unsubscribe flow.
+
+Lastly, I needed to set up a cron job to send out the newsletter every week. This was super simple to do with Railway's cron service.
+
+I duplicated my service, and set a custom start command which would run the newsletter process. Then I set the cron schedule to run the service at 12:00pm every Monday and Thursday:
+
+![Railway Cron Job](/automated-newsletter/railway-cron.png)
+
+Now I was ready to go!
+
+The best part about this project was that I already had an audience to launch with. Within a day of posting the link to the facebook group, I had 71 subscribers!
+
+![Resend Screenshot](/automated-newsletter/resend-screenshot.png)
+
+For a future update, I'm considering using some of my [web scraping skills](/posts/ai-scraper) to automatically import posts from the facebook group into the newsletter. That way people wouldn't have to make posts in both places, and I could eventually phase out the facebook group altogether. But that's a project for another day!
+
+If you made it this far, thank you for reading! Subscribe to my newsletter below if you'd like to get notified about new posts like this one (it's not automated, I promise 😉)
