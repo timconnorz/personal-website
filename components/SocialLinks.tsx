@@ -5,9 +5,9 @@ export default function SocialLinks() {
   const iconSize = 20
   return (
     <div className="flex flex-row space-x-3 opacity-80 pt-1 mt-1">
-      {/* Twitter Icon */}
-      <a href="https://twitter.com/itstimconnors">
-        <Image src="/twitter.svg" alt="Twitter Logo" width={iconSize} height={iconSize} className="hover:opacity-50" />
+      {/* Bluesky Icon */}
+      <a href="https://bsky.app/profile/timconnors.bsky.social">
+        <Image src="/bluesky.svg" alt="Bluesky Logo" width={iconSize} height={iconSize} className="hover:opacity-50" />
       </a>
       {/* LinkedIn Icon */}
       <a href="https://www.linkedin.com/in/itstimconnors">
