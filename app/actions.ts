@@ -35,27 +35,30 @@ export async function addSubscriber({ email, name }: { email: string, name?: str
   return data
 }
 
-export async function sendTextToTim({message}: {message: string}) {
-  console.log(`Sending text to Tim: ${message}`)
+// Disabled: every export of a "use server" file is a public endpoint, so this let
+// anyone text Tim's phone with any message. To re-enable, call it from inside
+// addSubscriber and don't export it.
+// export async function sendTextToTim({message}: {message: string}) {
+//   console.log(`Sending text to Tim: ${message}`)
 
-  // Construct the Basic Auth string
-  const authString = `Basic ${Buffer.from(`${process.env.TEXTBELT_AUTH_USERNAME}:${process.env.TEXTBELT_AUTH_PASSWORD}`).toString('base64')}`;
+//   // Construct the Basic Auth string
+//   const authString = `Basic ${Buffer.from(`${process.env.TEXTBELT_AUTH_USERNAME}:${process.env.TEXTBELT_AUTH_PASSWORD}`).toString('base64')}`;
   
-  // HTTP Request with Basic Auth
-  const response = await fetch(`${process.env.TEXTBELT_URL}/text`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': authString,
-    },
-    body: JSON.stringify({
-      number: process.env.TIM_PHONE_NUMBER,
-      message,
-    }),
-  })
+//   // HTTP Request with Basic Auth
+//   const response = await fetch(`${process.env.TEXTBELT_URL}/text`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': authString,
+//     },
+//     body: JSON.stringify({
+//       number: process.env.TIM_PHONE_NUMBER,
+//       message,
+//     }),
+//   })
 
-  if (response.status !== 200) {
-    throw new Error(`Error sending text to Tim. Response: ${response.status} - ${response.statusText}`)
-  }
+//   if (response.status !== 200) {
+//     throw new Error(`Error sending text to Tim. Response: ${response.status} - ${response.statusText}`)
+//   }
 
-}
+// }
