@@ -55,34 +55,57 @@ export function envCheck(env: Env = process.env): Check {
   }];
 }
 
-// GET /api/health is Listmonk's own read-only health endpoint; it also confirms
-// Listmonk can reach its database and that our credentials are accepted.
+// Read-only Listmonk calls that mirror what addSubscriber needs:
+//   1. GET /api/health: Listmonk is up, can reach its database, and accepts our credentials.
+//   2. GET /api/lists/:id: the newsletter list exists and the API user can see it.
+//   3. GET /api/subscribers?per_page=1: the API user has subscriber access. Only the
+//      status is used; the subscriber data is never read or returned.
+// 2 and 3 only run once 1 passes, so bad credentials are reported once, as "auth rejected".
 export function listmonkCheck(env: Env = process.env, fetchImpl: typeof fetch = fetch): Check {
   return ["listmonk", async () => {
-    const { LISTMONK_URL, LISTMONK_USERNAME, LISTMONK_PASSWORD } = env;
+    const { LISTMONK_URL, LISTMONK_USERNAME, LISTMONK_PASSWORD, NEWSLETTER_LIST_ID } = env;
     // Missing config is already reported by the env check.
     if (!LISTMONK_URL || !LISTMONK_USERNAME || !LISTMONK_PASSWORD) return;
 
-    let res: Response;
-    try {
-      res = await fetchImpl(`${LISTMONK_URL}/api/health`, {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${LISTMONK_USERNAME}:${LISTMONK_PASSWORD}`).toString("base64")}`,
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-    } catch (err) {
-      console.error('health check "listmonk" request failed', err);
-      throw new HealthError("unreachable");
-    }
-
-    if (res.status === 401 || res.status === 403) throw new HealthError("auth rejected");
-    const data = res.ok ? await res.json().catch(() => null) : null;
-    if (data?.data !== true) {
+    const get = async (path: string) => {
+      try {
+        return await fetchImpl(`${LISTMONK_URL}${path}`, {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${LISTMONK_USERNAME}:${LISTMONK_PASSWORD}`).toString("base64")}`,
+          },
+          cache: "no-store",
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+      } catch (err) {
+        console.error('health check "listmonk" request failed', err);
+        throw new HealthError("unreachable");
+      }
+    };
+    const unhealthy = (res: Response) => {
       console.error(`health check "listmonk" got unhealthy response, status ${res.status}`);
-      throw new HealthError("unhealthy response");
+      return "unhealthy response";
+    };
+
+    const health = await get("/api/health");
+    if (health.status === 401 || health.status === 403) throw new HealthError("auth rejected");
+    const data = health.ok ? await health.json().catch(() => null) : null;
+    if (data?.data !== true) throw new HealthError(unhealthy(health));
+
+    const [list, subscribers] = await Promise.all([
+      NEWSLETTER_LIST_ID ? get(`/api/lists/${encodeURIComponent(NEWSLETTER_LIST_ID)}`) : null,
+      get("/api/subscribers?per_page=1"),
+    ]);
+    const problems: string[] = [];
+    if (list && !list.ok) {
+      if (list.status === 400 || list.status === 404) problems.push("newsletter list not found");
+      else if (list.status === 403) problems.push("no permission to read newsletter list");
+      else problems.push(unhealthy(list));
     }
+    if (!subscribers.ok) {
+      if (subscribers.status === 403) problems.push("no permission to read subscribers");
+      else problems.push(unhealthy(subscribers));
+    }
+    if (problems.length) throw new HealthError(problems.filter((p, i) => problems.indexOf(p) === i).join("; "));
   }];
 }
 
