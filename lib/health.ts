@@ -15,8 +15,6 @@ export type HealthResult = { status: number; body: { errors: string[] } };
 export const TIMEOUT_MS = 3000;
 
 // The newsletter signup (app/actions.ts addSubscriber) can't work without these.
-// The Textbelt vars are left out on purpose: the SMS to Tim is fire-and-forget
-// and never affects visitors.
 export const REQUIRED_ENV = [
   "LISTMONK_URL",
   "LISTMONK_USERNAME",
